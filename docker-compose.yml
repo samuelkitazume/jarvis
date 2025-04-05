@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    restart: unless-stopped
+
+  vector-db:
+    image: chromadb/chroma
+    container_name: vector-db
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma
+    restart: unless-stopped
+
+  jarvis-backend:
+    build:
+      context: ./jarvis-backend
+    container_name: jarvis-backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ollama
+      - vector-db
+    volumes:
+      - ./jarvis-backend:/app
+    environment:
+      - LLM_URL=http://ollama:11434
+      - VECTOR_DB_URL=http://vector-db:8000
+    restart: unless-stopped
+
+volumes:
+  ollama_models:
+  chroma_data:
+
