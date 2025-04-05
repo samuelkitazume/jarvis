@@ -26,28 +26,37 @@ Um sistema 100% local e modular, com foco em:
 - (Opcional) LoRA para trejeitos e personalidade
 - Configurável via arquivos externos montados como volume
 
-#### 🧹 Raciocínio + Execução de APIs
+#### 🤹️ Raciocínio + Execução de APIs
 - Framework: LangChain, PrivateGPT ou script customizado
 - Entrada: Pedido do usuário
 - Ação: Interpreta e chama APIs (Home Assistant, etc.)
 - Container: `jarvis-backend`
+- Integração via OpenAPI Schema: utilizando `langchain.tools.openapi`, é possível importar um schema OpenAPI (ex: do Home Assistant) e permitir que o modelo:
+  - Analise os endpoints disponíveis
+  - Decida qual usar com base na intenção do usuário
+  - Monte automaticamente a requisição HTTP
+  - Interprete a resposta da API e gere uma resposta natural
+- Observação: Essa funcionalidade atua como uma extensão dos agentes, semelhante a um RAG, mas com foco em ações dinâmicas e integrações externas ao invés de contexto documental.
+
+- **Comparativo RAG vs OpenAPI Agent**:
+
+| Caso de uso                     | Melhor com...        | Justificativa                                      |
+|---------------------------------|-----------------------|----------------------------------------------------|
+| “Como faço pra resetar a Alexa?”| RAG                   | Informação estável, escrita 1x, útil sempre        |
+| “Quantas fraldas hoje de manhã?”| OpenAPI Agent         | Dados variam, dependem de filtros e tempo          |
+| “Quais sensores estão ativos?”  | OpenAPI Agent         | Tempo real, consulta dinâmica                      |
+| “Qual a rotina ‘Boa noite’?”    | RAG                   | Texto definido e raramente modificado              |
+| “Qual foi o último banho?”      | OpenAPI Agent         | Dados estruturados, tempo sensível                 |
+
+---
 
 #### 🤔 Memória e Contexto (RAG)
 - Vetor store: Chroma, FAISS, Weaviate
-- Uso: Indexa documentos, registros de interação e preferências
+- Uso: Indexa documentos, registros de interação e preferências que sejam essencialmente **estáticos ou com pouca variação**, como FAQs, manuais, instruções da casa, listas de comandos, regras e protocolos.
 - Container: `vector-db`
 - Observação: O RAG é implementado via LangChain e utiliza o Ollama já existente. Não é iniciado um novo LLM; o LangChain apenas consome a API do Ollama. O processo envolve: carregar documentos, gerar embeddings (ex: MiniLM), armazenar no Chroma e, ao consultar, enviar os trechos recuperados junto com o prompt para o LLM gerar a resposta.
-
-#### 🛠 Integração com Smart Home
-- Home Assistant via REST API, MQTT ou WebSocket
-- Interação com sensores, dispositivos Tuya/Zigbee/Wi-Fi
-- Container externo: `home-assistant`
-
-#### 🌎 Integração Externa: STT e TTS
-- Dispositivo externo (outro PC, Raspberry Pi, ou container separado)
-- STT captura voz e envia texto para API da LLM
-- LLM responde com texto
-- TTS converte resposta textual em áudio e fala com o usuário
+- Limitação: Embora seja eficiente para contexto estático, o RAG não lida bem com **dados altamente dinâmicos** (como logs atualizados, sensores, e-mails, atividades de bebê, etc.), onde o uso de **agentes com integração via OpenAPI** é mais apropriado e flexível.
+- Recomendação: Use RAG para dados de referência duradouros (manuais, comandos, regras fixas), e agentes para dados vivos ou em constante mutação.
 
 ---
 
@@ -59,7 +68,7 @@ Um sistema 100% local e modular, com foco em:
 
 **[Servidor Kali Linux]**
 3. LLM interpreta comando + aplica personalidade
-4. Agente decide se chama API ou responde direto
+4. Agente decide se chama API (via OpenAPI) ou responde direto
 5. (Opcional) Consulta ao vetor store (RAG)
 6. Resposta textual é devolvida pela API
 
