@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+.env
+.venv/
+*.sqlite3
+
+# VSCode ou IDEs
+.vscode/
+.idea/
+
+# Docker volumes locais
+chroma_data/
+ollama_models/
+
+# Dados sensíveis e brutos
+jarvis-backend/data/*.json
+jarvis-backend/data/*.txt
+
+# Arquivos temporários
+*.bak
+*.tmp
+*.swp
+.DS_Store
+

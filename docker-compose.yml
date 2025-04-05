@@ -7,7 +7,7 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama_models:/root/.ollama
+      - ./ollama_models:/root/.ollama
     restart: unless-stopped
 
   vector-db:
@@ -16,12 +16,13 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - chroma_data:/chroma
+      - ./chroma_data:/chroma
     restart: unless-stopped
 
   jarvis-backend:
     build:
       context: ./jarvis-backend
+      dockerfile: Dockerfile
     container_name: jarvis-backend
     ports:
       - "5000:5000"
@@ -29,13 +30,11 @@ services:
       - ollama
       - vector-db
     volumes:
-      - ./jarvis-backend:/app
+      - ./jarvis-backend:/app                # Código da API
+      - ./jarvis-backend/data:/app/data      # Arquivos .txt acessíveis
+      - ./chroma_data:/chroma                # Banco vetorial sincronizado
     environment:
       - LLM_URL=http://ollama:11434
       - VECTOR_DB_URL=http://vector-db:8000
     restart: unless-stopped
-
-volumes:
-  ollama_models:
-  chroma_data:
 
