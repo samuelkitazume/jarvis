@@ -6,7 +6,7 @@ from langchain.llms import Ollama
 app = FastAPI()
 
 retriever = get_retriever()
-llm = Ollama(model="mistral", base_url="http://ollama:11434")  # LLM já rodando no container 'ollama'
+llm = Ollama(model="phi", base_url="http://ollama:11434")
 qa = RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
 
 @app.post("/ask")

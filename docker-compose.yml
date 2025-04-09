@@ -8,6 +8,14 @@ services:
       - "11434:11434"
     volumes:
       - ./ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
     restart: unless-stopped
 
   vector-db:
@@ -31,7 +39,6 @@ services:
       - vector-db
     volumes:
       - ./jarvis-backend:/app                # Código da API
-      - ./jarvis-backend/data:/app/data      # Arquivos .txt acessíveis
       - ./chroma_data:/chroma                # Banco vetorial sincronizado
     environment:
       - LLM_URL=http://ollama:11434

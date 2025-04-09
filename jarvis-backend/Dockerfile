@@ -1,9 +1,12 @@
-FROM python:3.10-slim
+FROM python:3.10
 
 WORKDIR /app
 
 # Copia os arquivos da pasta jarvis-backend para dentro do container
 COPY . .
+
+# Atualiza pip, setuptools e wheel
+RUN pip install --upgrade pip setuptools wheel
 
 # Instala as dependências
 RUN pip install --no-cache-dir -r requirements.txt

@@ -19,6 +19,7 @@ ollama_models/
 # Dados sensíveis e brutos
 jarvis-backend/data/*.json
 jarvis-backend/data/*.txt
+jarvis-backend/.env
 
 # Arquivos temporários
 *.bak
