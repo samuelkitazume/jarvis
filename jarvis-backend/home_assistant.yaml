@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: Home Assistant REST API
+  description: API for interacting with Home Assistant core via REST.
+  version: 1.0.0
+servers:
+  - url: http://192.168.2.72:8123/api
+    description: Local Home Assistant instance
+paths:
+  /:
+    get:
+      summary: API root
+      responses:
+        '200':
+          description: Successful response
+  /states:
+    get:
+      summary: Get all entity states
+      responses:
+        '200':
+          description: List of all entity states
+  /states/{entity_id}:
+    get:
+      summary: Get the state of a specific entity
+      parameters:
+        - in: path
+          name: entity_id
+          required: true
+          schema:
+            type: string
+          example: light.living_room
+      responses:
+        '200':
+          description: State of the entity
+    post:
+      summary: Set the state of a specific entity
+      parameters:
+        - in: path
+          name: entity_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                attributes:
+                  type: object
+      responses:
+        '200':
+          description: Updated entity state
+  /services:
+    get:
+      summary: List available services
+      responses:
+        '200':
+          description: List of services
+  /services/{domain}/{service}:
+    post:
+      summary: Call a service
+      parameters:
+        - in: path
+          name: domain
+          required: true
+          schema:
+            type: string
+          example: light
+        - in: path
+          name: service
+          required: true
+          schema:
+            type: string
+          example: turn_on
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                entity_id: light.living_room
+      responses:
+        '200':
+          description: Service call successful
+  /config:
+    get:
+      summary: Get config info
+      responses:
+        '200':
+          description: Configuration details
+  /events:
+    get:
+      summary: Get a list of events
+      responses:
+        '200':
+          description: Event types
+  /events/{event_type}:
+    post:
+      summary: Fire an event
+      parameters:
+        - in: path
+          name: event_type
+          required: true
+          schema:
+            type: string
+          example: my_custom_event
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Event fired
