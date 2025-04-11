@@ -124,3 +124,23 @@ Um sistema 100% local e modular, com foco em:
 - Distribuição modular com vários dispositivos em rede
 
 
+### Dicas
+
+#### Curl para jarvis-backend
+```bash
+curl -X POST http://localhost:5000/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question": "Hey, Jarvis!"}'
+```
+
+#### Curl para Ollama direto
+```bash
+curl http://localhost:11434/api/generate \
+  -d '{
+    "model": "phi",
+    "prompt": "What is the capital of Canada?",
+    "stream": false
+  }' \
+  -H "Content-Type: application/json"
+```
+

@@ -14,9 +14,27 @@ from langchain_community.tools.json.tool import JsonSpec
 # LLM local (Ollama)
 from langchain_ollama import OllamaLLM
 
+# para debugar
+import requests
+
 # Carrega variáveis de ambiente do .env
 load_dotenv()
 bearer_token = os.getenv("API_TOKEN")
+
+# Headers personalizados, como o token de autenticação do Home Assistant
+custom_headers = {
+    "Authorization": f"Bearer {bearer_token}",
+    "Content-Type": "application/json"
+}
+
+# DEBUG: Testa conexão com um IP específico
+print(">>>>>>>>> debugging with request", flush=True)
+try:
+    debug_ip = "http://192.168.2.72:8123/api/"  # substitua pelo IP real do seu servidor
+    debug_response = requests.get(debug_ip, headers=custom_headers, timeout=3)
+    print(f"DEBUG: Conexão bem-sucedida com {debug_ip} - Status: {debug_response.status_code}", flush=True)
+except Exception as debug_error:
+    print(f"DEBUG: Falha ao conectar com {debug_ip} - Erro: {debug_error}", flush=True)
 
 app = FastAPI()
 
@@ -27,18 +45,11 @@ with open("home_assistant.yaml", "r") as f:
 # 2. Cria o objeto OpenAPISpec
 json_spec = JsonSpec.parse_obj({"dict_": raw_spec})
 
-# Headers personalizados, como o token de autenticação do Home Assistant
-custom_headers = {
-    "Authorization": f"Bearer {bearer_token}",
-    "Content-Type": "application/json"
-}
-
 # Cria o requests wrapper com os headers
 requests_wrapper = TextRequestsWrapper(headers=custom_headers)
 
 # 4. Cria o LLM local (Ollama, rodando phi, etc.)
-llm = OllamaLLM(model="phi", base_url="http://localhost:11434")
-
+llm = OllamaLLM(model="phi", base_url="http://ollama:11434")
 
 toolkit = OpenAPIToolkit.from_llm(
     llm=llm,
@@ -49,6 +60,31 @@ toolkit = OpenAPIToolkit.from_llm(
 # 6. Gera o agente OpenAPI (ele decide qual endpoint usar)
 agent = create_openapi_agent(llm=llm, toolkit=toolkit, verbose=True)
 
+def should_use_agent(question: str) -> bool:
+    intent_prompt = f"""
+    Question from the user: {question}
+
+    Would this question require a consultation to his Home Assistant REST API for a more accurate answer?
+
+    Answer me with only one word: 'yes' or 'no'
+    """
+    result = llm.invoke(intent_prompt)
+    print(f"[ROUTER PROMPT] {intent_prompt}", flush=True)
+    print(f"[SHOULD USE AGENT RESPONSE] {result}", flush=True)
+    return "yes" in result.lower()
+
+def generate_fallback_response(question: str, error: str) -> str:
+    fallback_prompt = f"""
+Something went wrong when requesting Home Assistant API to answer the following question:
+
+"{question}"
+
+Erro: {error}
+
+Generate a brief and friendly response explaining this to the user
+"""
+    return llm.invoke(fallback_prompt)
+
 @app.post("/ask")
 async def ask(request: Request):
     body = await request.json()
@@ -56,9 +92,11 @@ async def ask(request: Request):
     if not question:
         return {"error": "Pergunta não encontrada"}
 
-    try:
-        # 7. Executa a chain do agente
-        answer = await agent.run(question)
-        return {"answer": answer}
-    except Exception as e:
-        return {"error": str(e)}
+    if should_use_agent(question):
+        try:
+            answer = await agent.run(question)
+            return {"answer": answer}
+        except Exception as e:
+            return generate_fallback_response(question, e)
+    else:
+        return llm.invoke(question)
